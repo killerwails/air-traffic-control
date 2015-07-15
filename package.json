@@ -5,7 +5,6 @@
   "private": true,
   "dependencies": {
     "express": "*",
-    "execSync": "*",
-    "node-ini": "*"
+    "execSync": "*"
   }
 }

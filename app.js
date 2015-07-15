@@ -1,7 +1,6 @@
 var CONFIG    = require("./config"),
     express   = require('express'),
     fs        = require('fs'),
-    ini       = require('node-ini'),
     webserver = express(),
     sh        = require('execSync')  // executing system commands
 
