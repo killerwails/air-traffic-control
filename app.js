@@ -1,9 +1,14 @@
 var CONFIG    = require("./config"),
     express   = require('express'),
     fs        = require('fs'),
+    ini       = require('node-ini'),
     webserver = express(),
     sh        = require('execSync')  // executing system commands
 
+// taken from http://stackoverflow.com/questions/1144783/replacing-all-occurrences-of-a-string-in-javascript on 20150812 @ 05:00 EST
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
 
 function getFiles (dir, files_){
     files_    = files_ || []
@@ -36,9 +41,12 @@ webserver.use (function (req, res) {
   } else if (action == "reforge") {
   	var cmd = "cd " + CONFIG.REPOSITORY_HOME + " && " +
   	          "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/"
-
+  	var enviroments = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g)
   	buffered_out += "Reforge " + playbook + " in " + env + "<br>" + cmd + "<br>"
-    buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
+
+  	for (var i in enviroments)
+  		if (enviroments[i] != "")
+    buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + enviroments[i] + "</pre>"
   } else {
 	  buffered_out += "<table><tr>"
 	  buffered_out += "<th>Playbook</th>"
@@ -64,7 +72,7 @@ webserver.use (function (req, res) {
 	  buffered_out += "</table>"
   }
 
-  res.send(buffered_out);
+  res.send(buffered_out)
 })
 
 webserver.listen(CONFIG.PORT, 'localhost')
