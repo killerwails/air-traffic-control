@@ -49,7 +49,7 @@ webserver.use (function (req, res) {
   	for (var i in enviroments) {
       if (enviroments[i] != "") {
       	buffered_out += "<h2>" + enviroments[i] + "</h2>"
-        buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec ("echo 'sudo reforge' | ssh -o StrictHostKeyChecking=no t864007@" + enviroments[i]).stdout + "</pre>"
+        buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec ("echo 'sudo reforge' | ssh -o StrictHostKeyChecking=no " + CONFIG.USERID + "@" + enviroments[i]).stdout + "</pre>"
       }
     }
   } else {
@@ -69,7 +69,7 @@ webserver.use (function (req, res) {
 	      buffered_out += "<td>" + this_playbook + "</td>"
 	      buffered_out += "<td><a href='/build/next/" + this_playbook + "'>build infra</a> / "
 	      buffered_out += "<a href='/reforge/next/" + this_playbook + "'>reforge</a></td>"
-	      buffered_out += "<td><a href='/build/development/" + this_playbook + "'>build infra</a>"
+	      buffered_out += "<td><a href='/build/development/" + this_playbook + "'>build infra</a> / "
 	      buffered_out += "<a href='/reforge/development/" + this_playbook + "'>reforge</a></td>"
 	      buffered_out += "</tr>"
 	    }
