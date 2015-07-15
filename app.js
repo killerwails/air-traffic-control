@@ -27,15 +27,23 @@ webserver.use (function (req, res) {
       playbook     = url_folders[3]
 
   if (action == "build") {
-  	var cmd = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && ansible-playbook infrastructure.yml -i hosts/" + env
+  	var cmd = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
+  	          "ansible-playbook infrastructure.yml -i hosts/" + env
 
     buffered_out += "building " + playbook + " in " + env + "<br>" + cmd + "<br>"
     buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
 
+  } else if (action == "reforge") {
+  	var cmd = "cd " + CONFIG.REPOSITORY_HOME + " && " +
+  	          "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/"
+
+  	buffered_out += "Reforge " + playbook + " in " + env + "<br>" + cmd + "<br>"
+    buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
   } else {
 	  buffered_out += "<table><tr>"
 	  buffered_out += "<th>Playbook</th>"
 	  buffered_out += "<th>Next</th>"
+	  buffered_out += "<th>Development</th>"
 	  buffered_out += "</tr>"
 
 	  for (var i in files) {
@@ -46,7 +54,9 @@ webserver.use (function (req, res) {
 
 	      buffered_out += "<tr>"
 	      buffered_out += "<td>" + this_playbook + "</td>"
-	      buffered_out += "<td><a href='/build/next/" + this_playbook + "'>build infra</a></td>"
+	      buffered_out += "<td><a href='/build/next/" + this_playbook + "'>build infra</a> / "
+	      buffered_out += "<a href='/reforge/next/" + this_playbook + "'>reforge</a></td>"
+	      buffered_out += "<td><a href='/build/development/" + this_playbook + "'>build infra</a></td>"
 	      buffered_out += "</tr>"
 	    }
 	  }
