@@ -34,14 +34,14 @@ webserver.use (function (req, res) {
   	var cmd = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
   	          "ansible-playbook infrastructure.yml -i hosts/" + env
 
-    buffered_out += "building " + playbook + " in " + env + "<h2>" + cmd + "</h2>"
+    buffered_out += "<h1>Building " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
     buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
 
   } else if (action == "reforge") {
   	var cmd = "cd " + CONFIG.REPOSITORY_HOME + " && " +
   	          "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/"
   	var enviroments = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g)
-  	buffered_out += "Reforge " + playbook + " in " + env + "<h2>" + cmd + "</h2>"
+  	buffered_out += "<h1>Reforge " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
 
   	buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
 
@@ -55,7 +55,9 @@ webserver.use (function (req, res) {
 	  buffered_out += "<table><tr>"
 	  buffered_out += "<th>Playbook</th>"
 	  buffered_out += "<th>Next</th>"
-	  buffered_out += "<th>Development</th>"
+    buffered_out += "<th>Development</th>"
+    buffered_out += "<th>Staging</th>"
+	  buffered_out += "<th>Production</th>"
 	  buffered_out += "</tr>"
 
 	  for (var i in files) {
@@ -68,8 +70,12 @@ webserver.use (function (req, res) {
 	      buffered_out += "<td>" + this_playbook + "</td>"
 	      buffered_out += "<td><a href='/build/next/" + this_playbook + "'>build infra</a> / "
 	      buffered_out += "<a href='/reforge/next/" + this_playbook + "'>reforge</a></td>"
-	      buffered_out += "<td><a href='/build/development/" + this_playbook + "'>build infra</a> / "
-	      buffered_out += "<a href='/reforge/development/" + this_playbook + "'>reforge</a></td>"
+        buffered_out += "<td><a href='/build/development/" + this_playbook + "'>build infra</a> / "
+        buffered_out += "<a href='/reforge/development/" + this_playbook + "'>reforge</a></td>"
+        buffered_out += "<td><a href='/build/staging/" + this_playbook + "'>build infra</a> / "
+        buffered_out += "<a href='/reforge/staging/" + this_playbook + "'>reforge</a></td>"
+        buffered_out += "<td><a href='/build/production/" + this_playbook + "'>build infra</a> / "
+        buffered_out += "<a href='/reforge/production/" + this_playbook + "'>reforge</a></td>"
 	      buffered_out += "</tr>"
 	    }
 	  }
