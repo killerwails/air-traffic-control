@@ -8,7 +8,6 @@ var CONFIG    = require("./config"),
 
 webserver.use (function (req, res) {
   var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; }</style>",
-      files        = getFiles(CONFIG.REPOSITORY_HOME),
       url_folders  = req.originalUrl.split ('/'),
       action       = url_folders[1],
       env          = url_folders[2],
@@ -19,7 +18,7 @@ webserver.use (function (req, res) {
   } else if (action == "reforge") {
     buffered_out += reforge (playbook, env)
   } else {
-    buffered_out += showSite ()
+    buffered_out += showIndex ()
   }
 
   res.send(buffered_out)
@@ -90,8 +89,9 @@ function reforge (playbook, env) {
   return buffered_out
 }
 
-function showSite () {
-  var buffered_out = "<table>" +
+function showIndex () {
+  var files        = getFiles(CONFIG.REPOSITORY_HOME),
+      buffered_out = "<table>" +
                      "  <tr>" +
                      "    <th>Playbook</th>" +
                      "    <th>Next</th>" +
