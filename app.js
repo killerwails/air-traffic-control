@@ -23,7 +23,7 @@ function getFiles (dir, files_){
 }
 
 webserver.use (function (req, res) {
-  var buffered_out = "",
+  var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; }</style>",
       files        = getFiles(CONFIG.REPOSITORY_HOME),
       url_folders  = req.originalUrl.split ('/'),
       action       = url_folders[1],
@@ -35,7 +35,7 @@ webserver.use (function (req, res) {
   	          "ansible-playbook infrastructure.yml -i hosts/" + env
 
     buffered_out += "<h1>Building " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
-    buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
+    buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
   } else if (action == "reforge") {
   	var cmd = "cd " + CONFIG.REPOSITORY_HOME + " && " +
@@ -43,12 +43,12 @@ webserver.use (function (req, res) {
   	var enviroments = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g)
   	buffered_out += "<h1>Reforge " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
 
-  	buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec (cmd).stdout + "</pre>"
+  	buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
   	for (var i in enviroments) {
       if (enviroments[i] != "") {
       	buffered_out += "<h2>" + enviroments[i] + "</h2>"
-        buffered_out += "<pre style='background: black;color: white;padding: 20px;'>" + sh.exec ("echo 'sudo reforge' | ssh -o StrictHostKeyChecking=no " + CONFIG.USERID + "@" + enviroments[i]).stdout + "</pre>"
+        buffered_out += "<pre>" + sh.exec ("echo 'sudo reforge' | ssh -o StrictHostKeyChecking=no " + CONFIG.USERID + "@" + enviroments[i]).stdout + "</pre>"
       }
     }
   } else {
