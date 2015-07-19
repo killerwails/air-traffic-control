@@ -51,9 +51,9 @@ function sendSlack (message) {
     username: "ATC"
   }, function (error) {
     if (error != null && error.message != null) {
-      console.log ("Slack: " + error.message);
+      console.log ("Slack: " + error.message)
     }
-  });
+  })
 }
 
 function build (playbook, env) {
@@ -71,9 +71,10 @@ function build (playbook, env) {
 }
 
 function reforge (playbook, env) {
-  var cmd         = "cd " + CONFIG.REPOSITORY_HOME + " && " +
-                    "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/",
-      enviroments = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g)
+  var cmd          = "cd " + CONFIG.REPOSITORY_HOME + " && " +
+                     "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/",
+      enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
+      buffered_out = ""
 
   buffered_out += "<h1>Reforge " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
 
