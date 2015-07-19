@@ -2,7 +2,9 @@ var CONFIG    = require("./config"),
     express   = require('express'),
     fs        = require('fs'),
     webserver = express(),
-    sh        = require('execSync')  // executing system commands
+    sh        = require('execSync'),  // executing system commands
+    Slack     = require("node-slack");
+    slack     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
 
 // taken from http://stackoverflow.com/questions/1144783/replacing-all-occurrences-of-a-string-in-javascript on 20150812 @ 05:00 EST
 function replaceAll(find, replace, str) {
@@ -22,6 +24,18 @@ function getFiles (dir, files_){
     return files_
 }
 
+function sendSlack (message) {
+  slack.send({
+    text: message,
+    channel: "#skynet",
+    username: "ATC"
+  }, function (error) {
+    if (error != null && error.message != null) {
+      console.log ("Slack: " + error.message);
+    }
+  });
+}
+
 webserver.use (function (req, res) {
   var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; }</style>",
       files        = getFiles(CONFIG.REPOSITORY_HOME),
@@ -34,9 +48,12 @@ webserver.use (function (req, res) {
   	var cmd = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
   	          "ansible-playbook infrastructure.yml -i hosts/" + env
 
+    sendSlack ("Building " + playbook + " in " + env)
     buffered_out += "<h1>Building " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
+
     buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
+    sendSlack (playbook + " infra completed in " + env)
   } else if (action == "reforge") {
   	var cmd = "cd " + CONFIG.REPOSITORY_HOME + " && " +
   	          "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/"
