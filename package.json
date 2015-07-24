@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "express": "*",
-    "execSync": "*"
+    "execSync": "*",
+    "node-slack": "*"
   }
 }
