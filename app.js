@@ -1,32 +1,50 @@
 var CONFIG    = require("./config"),
-    express   = require('express'),
+    cluster   = require('cluster'),
     fs        = require('fs'),
-    webserver = express(),
     sh        = require('execSync'),  // executing system commands
     Slack     = require("node-slack");
     slack     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
 
-webserver.use (function (req, res) {
-  var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; } td {padding: 0 20}</style>",
-      url_folders  = req.originalUrl.split ('/'),
-      action       = url_folders[1],
-      env          = url_folders[2],
-      playbook     = url_folders[3]
+// Include the cluster module
+var cluster = require('cluster');
 
-  if (action == "build") {
-    buffered_out += build (playbook, env)
-  } else if (action == "reforge") {
-    buffered_out += reforge (playbook, env)
-  } else if (action == "hotswap") {
-    buffered_out += hotswap (playbook, env)
-  } else {
-    buffered_out += showIndex ()
+// Code to run if we're in the master process
+if (cluster.isMaster) {
+  // Count the machine's CPUs
+  var cpuCount = require('os').cpus().length;
+
+  // Create a worker for each CPU
+  for (var i = 0; i < cpuCount; i += 1) {
+    cluster.fork();
   }
 
-  res.send(buffered_out)
-})
+// Code to run if we're in a worker process
+} else {
+  var express   = require('express'),
+      webserver = express()
 
-webserver.listen(CONFIG.PORT, 'localhost')
+  webserver.use (function (req, res) {
+    var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; } td {padding: 0 20}</style>",
+        url_folders  = req.originalUrl.split ('/'),
+        action       = url_folders[1],
+        env          = url_folders[2],
+        playbook     = url_folders[3]
+
+    if (action == "build") {
+      buffered_out += build (playbook, env)
+    } else if (action == "reforge") {
+      buffered_out += reforge (playbook, env)
+    } else if (action == "hotswap") {
+      buffered_out += hotswap (playbook, env)
+    } else {
+      buffered_out += showIndex ()
+    }
+
+    res.send(buffered_out)
+  })
+
+  webserver.listen(CONFIG.PORT, 'localhost')
+}
 
 // taken from http://stackoverflow.com/questions/1144783/replacing-all-occurrences-of-a-string-in-javascript on 20150812 @ 05:00 EST
 function replaceAll(find, replace, str) {

@@ -6,6 +6,7 @@
   "dependencies": {
     "express": "*",
     "execSync": "*",
+    "cluster": "*",
     "node-slack": "*"
   }
 }
