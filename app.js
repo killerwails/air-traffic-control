@@ -30,14 +30,16 @@ if (cluster.isMaster) {
         action       = url_folders[2],
         playbook     = url_folders[3]
 
-    if (action == "build") {
+    if (env == "") {
+      buffered_out += showEnviromentSelection ()
+    } else if (action == "build") {
       buffered_out += build (playbook, env)
     } else if (action == "reforge") {
       buffered_out += reforge (playbook, env)
     } else if (action == "hotswap") {
       buffered_out += hotswap (playbook, env)
     } else {
-      buffered_out += showIndex ()
+      buffered_out += showIndex (env)
     }
 
     res.send(buffered_out)
@@ -124,15 +126,25 @@ function hotswap (playbook, env) {
   return buffered_out
 }
 
-function showIndex () {
+function showEnviromentSelection () {
+  var buffered_out = "<h1>Select enviroment</h1>" +
+                     "  <ul>" +
+                     "    <li><a href='next/'>next</a></li>" +
+                     "    <li><a href='development/'>development</a></li>" +
+                     "    <li><a href='staging/'>staging</a></li>" +
+                     "    <li><a href='production/'>production</a></li>" +
+                     "  </ul>"
+
+  return buffered_out
+}
+
+function showIndex (enviroment) {
   var files        = getFiles(CONFIG.REPOSITORY_HOME),
-      buffered_out = "<table>" +
+      buffered_out = "<h1><a href='../'>&lt;</a>" + enviroment + "</h1>" +
+                     "<table>" +
                      "  <tr>" +
                      "    <th>Playbook</th>" +
                      "    <th>Next</th>" +
-                     "    <th>Development</th>" +
-                     "    <th>Staging</th>" +
-                     "    <th>Production</th>" +
                      "  </tr>"
 
   for (var i in files) {
@@ -143,10 +155,7 @@ function showIndex () {
 
       buffered_out += "<tr>" +
                       "  <td>" + this_playbook + "</td>" +
-                      "  <td><a href='/next/build/" + this_playbook + "'>build infra</a> / <a href='/next/reforge/" + this_playbook + "'>reforge</a> / <a href='/next/hotswap/" + this_playbook + "'>hotswap</a></td>" +
-                      "  <td><a href='/development/" + this_playbook + "'>build infra</a> / <a href='/development/reforge/" + this_playbook + "'>reforge</a> / <a href='/development/hotswap/" + this_playbook + "'>hotswap</a></td>" +
-                      "  <td><a href='/staging/build/" + this_playbook + "'>build infra</a> / <a href='/staging/reforge/" + this_playbook + "'>reforge</a> / <a href='/staging/hotswap/" + this_playbook + "'>hotswap</a></td>" +
-                      "  <td><a href='/production/build/" + this_playbook + "'>build infra</a> / <a href='/production/reforge/" + this_playbook + "'>reforge</a> / <a href='/production/hotswap/" + this_playbook + "'>hotswap</a></td>" +
+                      "  <td><a href='/" + enviroment + "/build/" + this_playbook + "'>build infra</a> / <a href='/" + enviroment + "/reforge/" + this_playbook + "'>reforge</a> / <a href='/" + enviroment + "/hotswap/" + this_playbook + "'>hotswap</a></td>"
                       "</tr>"
     }
   }
