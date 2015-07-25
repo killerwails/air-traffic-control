@@ -155,7 +155,11 @@ function showIndex (enviroment) {
 
       buffered_out += "<tr>" +
                       "  <td>" + this_playbook + "</td>" +
-                      "  <td><a href='/" + enviroment + "/build/" + this_playbook + "'>build infra</a> / <a href='/" + enviroment + "/reforge/" + this_playbook + "'>reforge</a> / <a href='/" + enviroment + "/hotswap/" + this_playbook + "'>hotswap</a></td>"
+                      "  <td>" + 
+                      "    <a href='/" + enviroment + "/build/" + this_playbook + "'>build infra</a> | " +
+                      "    <a href='/" + enviroment + "/reforge/" + this_playbook + "'>reforge</a> | " + 
+                      "    <a href='/" + enviroment + "/hotswap/" + this_playbook + "'>hotswap</a>" +
+                      "  </td>"
                       "</tr>"
     }
   }
