@@ -149,11 +149,14 @@ function hotswap (playbook, env, role) {
     if (error) {
       console.log(error)
     } else {
-      var instanceId = data.Reservations[0].Instances[0].InstanceId
+      var instance   = data.Reservations[0].Instances[0],
+          instanceId = instance.InstanceId,
+          tags       = instance.Tags
 
-      for (t in data.Reservations[0].Instances[0].Tags) {
-        var key   = data.Reservations[0].Instances[0].Tags[t].Key,
-            value = data.Reservations[0].Instances[0].Tags[t].Value
+
+      for (t in tags) {
+        var key   = tags[t].Key,
+            value = tags[t].Value
 
         if (key == "Role") {
           value += "-broken"
