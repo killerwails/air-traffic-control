@@ -26,8 +26,8 @@ if (cluster.isMaster) {
   webserver.use (function (req, res) {
     var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; } td {padding: 0 20}</style>",
         url_folders  = req.originalUrl.split ('/'),
-        action       = url_folders[1],
-        env          = url_folders[2],
+        env          = url_folders[1],
+        action       = url_folders[2],
         playbook     = url_folders[3]
 
     if (action == "build") {
@@ -143,10 +143,10 @@ function showIndex () {
 
       buffered_out += "<tr>" +
                       "  <td>" + this_playbook + "</td>" +
-                      "  <td><a href='/build/next/" + this_playbook + "'>build infra</a> / <a href='/reforge/next/" + this_playbook + "'>reforge</a> / <a href='/hotswap/next/" + this_playbook + "'>hotswap</a></td>" +
-                      "  <td><a href='/build/development/" + this_playbook + "'>build infra</a> / <a href='/reforge/development/" + this_playbook + "'>reforge</a> / <a href='/hotswap/development/" + this_playbook + "'>hotswap</a></td>" +
-                      "  <td><a href='/build/staging/" + this_playbook + "'>build infra</a> / <a href='/reforge/staging/" + this_playbook + "'>reforge</a> / <a href='/hotswap/staging/" + this_playbook + "'>hotswap</a></td>" +
-                      "  <td><a href='/build/production/" + this_playbook + "'>build infra</a> / <a href='/reforge/production/" + this_playbook + "'>reforge</a> / <a href='/hotswap/production/" + this_playbook + "'>hotswap</a></td>" +
+                      "  <td><a href='/next/build/" + this_playbook + "'>build infra</a> / <a href='/next/reforge/" + this_playbook + "'>reforge</a> / <a href='/next/hotswap/" + this_playbook + "'>hotswap</a></td>" +
+                      "  <td><a href='/development/" + this_playbook + "'>build infra</a> / <a href='/development/reforge/" + this_playbook + "'>reforge</a> / <a href='/development/hotswap/" + this_playbook + "'>hotswap</a></td>" +
+                      "  <td><a href='/staging/build/" + this_playbook + "'>build infra</a> / <a href='/staging/reforge/" + this_playbook + "'>reforge</a> / <a href='/staging/hotswap/" + this_playbook + "'>hotswap</a></td>" +
+                      "  <td><a href='/production/build/" + this_playbook + "'>build infra</a> / <a href='/production/reforge/" + this_playbook + "'>reforge</a> / <a href='/production/hotswap/" + this_playbook + "'>hotswap</a></td>" +
                       "</tr>"
     }
   }
