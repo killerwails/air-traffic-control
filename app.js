@@ -124,9 +124,7 @@ function reforge (playbook, env) {
 }
 
 function hotswap (playbook, env, role) {
-  var cmd          = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
-                     "ansible-playbook infrastructure.yml -i hosts/" + env + " --skip-tags dns",
-      enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
+  var enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
       enviroment   = "",
       buffered_out = "",
       params = {
@@ -149,38 +147,49 @@ function hotswap (playbook, env, role) {
     if (error) {
       console.log(error)
     } else {
-      var instance   = data.Reservations[0].Instances[0],
-          instanceId = instance.InstanceId,
-          tags       = instance.Tags
-
-
-      for (t in tags) {
-        var key   = tags[t].Key,
-            value = tags[t].Value
-
-        if (key == "Role") {
-          value += "-broken"
-
-          params = {
-            Resources: [instanceId],
-            Tags: [{
-              Key: key,
-              Value: value
-            }]
-          }
-          new AWS.EC2().createTags(params, function(err) {
-            console.log("Tagging instance", err ? "failure" : "success");
-          })
-        }
-      }
+      findInstance (data, playbook, enviroment)
     }
   })
+}
 
-  buffered_out += "<h1>Hotswapping " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
+function findInstance (data, playbook, enviroment, callback) {
+  var instance   = data.Reservations[0].Instances[0],
+      instanceId = instance.InstanceId,
+      tags       = instance.Tags
 
-  buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
-//  sendSlack (playbook + " infra completed in " + env)
+  for (t in tags) {
+    var key   = tags[t].Key,
+        value = tags[t].Value
+
+    if (key == "Role") {
+      value += "-broken"
+
+      params = {
+        Resources: [instanceId],
+        Tags: [{
+          Key: key,
+          Value: value
+        }]
+      }
+      new AWS.EC2().createTags(params, function(err) {
+        console.log("Tagging instance", err ? "failure" : "success")
+
+        if (!err) {
+          rebuildWithoutDNS (playbook, enviroment)
+        }
+      })
+    }
+  }
+}
+
+function rebuildWithoutDNS (playbook, enviroment) {
+  var cmd           = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
+                      "ansible-playbook infrastructure.yml -i hosts/" + enviroment + " --skip-tags dns",
+      buffered_out  = "<h1>Hotswapping " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
+                    + "<pre>" + sh.exec (cmd).stdout + "</pre>"
+
+    //  sendSlack (playbook + " infra completed in " + env)
 
   return buffered_out
 }
