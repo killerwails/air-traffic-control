@@ -5,18 +5,18 @@ var CONFIG    = require("./config"),
     Slack     = require("node-slack");
     slack     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
 
-// Include the cluster module
-var cluster = require('cluster');
-
-// Code to run if we're in the master process
 if (cluster.isMaster) {
-  // Count the machine's CPUs
-  var cpuCount = require('os').cpus().length;
+  var cpuCount        = require('os').cpus().length,
+      numberOfThreads = cpuCount * CONFIG.CPU_MULTIPLIER
 
-  // Create a worker for each CPU
-  for (var i = 0; i < cpuCount; i += 1) {
-    cluster.fork();
+  for (var i = 0; i < numberOfThreads; i++) {
+    cluster.fork()
   }
+
+  cluster.on('exit', function (worker) {
+    console.log('Worker ' + worker.id + ' died :(')
+    cluster.fork()
+  })
 
 // Code to run if we're in a worker process
 } else {
