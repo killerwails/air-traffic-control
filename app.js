@@ -44,7 +44,6 @@ if (cluster.isMaster) {
     } else if (action == "hotswap") {
       buffered_out += hotswap (playbook, env, role, function (buffered_out) {
         res.send (buffered_out)
-//        return buffered_out
       })
     } else {
       buffered_out += showIndex (env)
