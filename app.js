@@ -28,7 +28,8 @@ if (cluster.isMaster) {
         url_folders  = req.originalUrl.split ('/'),
         env          = url_folders[1],
         action       = url_folders[2],
-        playbook     = url_folders[3]
+        playbook     = url_folders[3],
+        role         = url_folders[4]
 
     if (env == "") {
       buffered_out += showEnviromentSelection ()
@@ -37,7 +38,7 @@ if (cluster.isMaster) {
     } else if (action == "reforge") {
       buffered_out += reforge (playbook, env)
     } else if (action == "hotswap") {
-      buffered_out += hotswap (playbook, env)
+      buffered_out += hotswap (playbook, env, role)
     } else {
       buffered_out += showIndex (env)
     }
@@ -46,6 +47,7 @@ if (cluster.isMaster) {
   })
 
   webserver.listen(CONFIG.PORT, 'localhost')
+  console.log('Air Traffic Control is running')
 }
 
 // taken from http://stackoverflow.com/questions/1144783/replacing-all-occurrences-of-a-string-in-javascript on 20150812 @ 05:00 EST
@@ -112,14 +114,30 @@ function reforge (playbook, env) {
   return buffered_out
 }
 
-function hotswap (playbook, env) {
+function hotswap (playbook, env, role) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
                      "ansible-playbook infrastructure.yml -i hosts/" + env + " --skip-tags dns",
+      enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
+      enviroment   = "",
       buffered_out = ""
+
+  for (var i in enviroments) {
+    if (enviroments[i].indexOf (role) >= 0) {
+      enviroment = enviroments[i]
+    }
+  }
+
+/*  new AWS.EC2().describeInstances(function(error, data) {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log (data)
+    }
+  })*/
 
   buffered_out += "<h1>Hotswapping " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
 
-  buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
+//  buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
 //  sendSlack (playbook + " infra completed in " + env)
 
@@ -144,7 +162,7 @@ function showIndex (enviroment) {
                      "<table>" +
                      "  <tr>" +
                      "    <th>Playbook</th>" +
-                     "    <th>Next</th>" +
+                     "    <th></th>" +
                      "  </tr>"
 
   for (var i in files) {
@@ -158,7 +176,7 @@ function showIndex (enviroment) {
                       "  <td>" + 
                       "    <a href='/" + enviroment + "/build/" + this_playbook + "'>build infra</a> | " +
                       "    <a href='/" + enviroment + "/reforge/" + this_playbook + "'>reforge</a> | " + 
-                      "    <a href='/" + enviroment + "/hotswap/" + this_playbook + "'>hotswap</a>" +
+                      "    hotswap: <a href='/" + enviroment + "/hotswap/" + this_playbook + "/inbound'>Inbound</a>" +
                       "  </td>"
                       "</tr>"
     }
