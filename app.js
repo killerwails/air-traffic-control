@@ -42,12 +42,16 @@ if (cluster.isMaster) {
     } else if (action == "reforge") {
       buffered_out += reforge (playbook, env)
     } else if (action == "hotswap") {
-      buffered_out += hotswap (playbook, env, role)
+      buffered_out += hotswap (playbook, env, role, function (buffered_out) {
+        res.send (buffered_out)
+//        return buffered_out
+      })
     } else {
       buffered_out += showIndex (env)
     }
 
-    res.send(buffered_out)
+    if (action != "hotswap")
+      res.send(buffered_out)
   })
 
   webserver.listen(CONFIG.PORT, 'localhost')
@@ -123,11 +127,11 @@ function reforge (playbook, env) {
   return buffered_out
 }
 
-function hotswap (playbook, env, role) {
-  var enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
-      enviroment   = "",
+function hotswap (playbook, env, role, callback) {
+  var all_roles    = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
+      current_role = "",
       buffered_out = "",
-      params = {
+      params       = {
         DryRun: false,
         Filters: [{
             Name: 'instance.group-name',
@@ -135,9 +139,9 @@ function hotswap (playbook, env, role) {
           }]
       }
 
-  for (var i in enviroments) {
-    if (enviroments[i].indexOf (role) >= 0) {
-      enviroment = enviroments[i]
+  for (var r in all_roles) {
+    if (all_roles[r].indexOf (role) >= 0) {
+      current_role = all_roles[r]
     }
   }
 
@@ -147,7 +151,13 @@ function hotswap (playbook, env, role) {
     if (error) {
       console.log(error)
     } else {
-      findInstance (data, playbook, enviroment)
+      findInstance (data, playbook, current_role, function () {
+        console.log ("Rebuild without DNS")
+        rebuildWithoutDNS (playbook, env, function (buffered_out) {
+          console.log (">"+buffered_out)
+          callback (buffered_out)
+        })
+      })
     }
   })
 }
@@ -156,7 +166,6 @@ function findInstance (data, playbook, enviroment, callback) {
   var instance   = data.Reservations[0].Instances[0],
       instanceId = instance.InstanceId,
       tags       = instance.Tags
-
 
   for (t in tags) {
     var key   = tags[t].Key,
@@ -176,14 +185,14 @@ function findInstance (data, playbook, enviroment, callback) {
         console.log("Tagging instance", err ? "failure" : "success")
 
         if (!err) {
-          rebuildWithoutDNS (playbook, enviroment)
+          console.log (callback())
         }
       })
     }
   }
 }
 
-function rebuildWithoutDNS (playbook, enviroment) {
+function rebuildWithoutDNS (playbook, enviroment, callback) {
   var cmd           = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
                       "ansible-playbook infrastructure.yml -i hosts/" + enviroment + " --skip-tags dns",
       buffered_out  = "<h1>Hotswapping " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
@@ -191,7 +200,7 @@ function rebuildWithoutDNS (playbook, enviroment) {
 
     //  sendSlack (playbook + " infra completed in " + env)
 
-  return buffered_out
+  callback (buffered_out)
 }
 
 function showEnviromentSelection () {
