@@ -1,9 +1,11 @@
-var CONFIG    = require("./config"),
-    cluster   = require('cluster'),
-    fs        = require('fs'),
-    sh        = require('execSync'),  // executing system commands
-    Slack     = require("node-slack");
-    slack     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
+var CONFIG                    = require("./config"),
+    cluster                   = require('cluster'),
+    AWS                       = require("aws-sdk"),
+    ENVIROMENT_AWS_REGION_MAP = require("./enviromentAwsRegionMap.json"),
+    fs                        = require('fs'),
+    sh                        = require('execSync'),  // executing system commands
+    Slack                     = require("node-slack");
+    slack                     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
 
 if (cluster.isMaster) {
   var cpuCount        = require('os').cpus().length,
@@ -119,7 +121,14 @@ function hotswap (playbook, env, role) {
                      "ansible-playbook infrastructure.yml -i hosts/" + env + " --skip-tags dns",
       enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
       enviroment   = "",
-      buffered_out = ""
+      buffered_out = "",
+      params = {
+        DryRun: false,
+        Filters: [{
+            Name: 'instance.group-name',
+            Values: [playbook + "-" + role]
+          }]
+      }
 
   for (var i in enviroments) {
     if (enviroments[i].indexOf (role) >= 0) {
@@ -127,17 +136,39 @@ function hotswap (playbook, env, role) {
     }
   }
 
-/*  new AWS.EC2().describeInstances(function(error, data) {
+  AWS.config.region = ENVIROMENT_AWS_REGION_MAP[env]
+
+  new AWS.EC2().describeInstances(params, function(error, data) {
     if (error) {
       console.log(error)
     } else {
-      console.log (data)
+      var instanceId = data.Reservations[0].Instances[0].InstanceId
+
+      for (t in data.Reservations[0].Instances[0].Tags) {
+        var key   = data.Reservations[0].Instances[0].Tags[t].Key,
+            value = data.Reservations[0].Instances[0].Tags[t].Value
+
+        if (key == "Role") {
+          value += "-broken"
+
+          params = {
+            Resources: [instanceId],
+            Tags: [{
+              Key: key,
+              Value: value
+            }]
+          }
+          new AWS.EC2().createTags(params, function(err) {
+            console.log("Tagging instance", err ? "failure" : "success");
+          })
+        }
+      }
     }
-  })*/
+  })
 
   buffered_out += "<h1>Hotswapping " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
 
-//  buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
+  buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
 //  sendSlack (playbook + " infra completed in " + env)
 
