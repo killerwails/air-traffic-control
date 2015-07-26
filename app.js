@@ -40,7 +40,7 @@ if (cluster.isMaster) {
     } else if (action == "reforge") {
       buffered_out += reforge (playbook, env)
     } else if (action == "hotswap") {
-      buffered_out += hotswap (playbook, env, role, function (buffered_out) {
+      buffered_out += hotswap (buffered_out, playbook, env, role, function (buffered_out) {
         res.send (buffered_out)
       })
     } else {
@@ -124,10 +124,9 @@ function reforge (playbook, env) {
   return buffered_out
 }
 
-function hotswap (playbook, env, role, callback) {
+function hotswap (buffered_out, playbook, env, role, callback) {
   var all_roles    = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
       current_role = "",
-      buffered_out = "",
       params       = {
         DryRun: false,
         Filters: [{
@@ -148,18 +147,18 @@ function hotswap (playbook, env, role, callback) {
     if (error) {
       console.log(error)
     } else {
-      findInstance (data, playbook, current_role, function () {
-        console.log ("Rebuild without DNS")
-        rebuildWithoutDNS (playbook, env, function (buffered_out) {
-          console.log (">"+buffered_out)
-          callback (buffered_out)
+      findInstance (buffered_out, data, playbook, current_role, function (buffered_out) {
+        rebuildWithoutDNS (buffered_out, playbook, env, function (buffered_out) {
+          isRunningCorrectly (buffered_out, playbook, current_role, 10, function (buffered_out) {
+            callback (buffered_out)
+          })
         })
       })
     }
   })
 }
 
-function findInstance (data, playbook, enviroment, callback) {
+function findInstance (buffered_out, data, playbook, enviroment, callback) {
   var instance   = data.Reservations[0].Instances[0],
       instanceId = instance.InstanceId,
       tags       = instance.Tags
@@ -182,22 +181,37 @@ function findInstance (data, playbook, enviroment, callback) {
         console.log("Tagging instance", err ? "failure" : "success")
 
         if (!err) {
-          console.log (callback())
+          callback(buffered_out)
         }
       })
     }
   }
 }
 
-function rebuildWithoutDNS (playbook, enviroment, callback) {
-  var cmd           = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
-                      "ansible-playbook infrastructure.yml -i hosts/" + enviroment + " --skip-tags dns",
-      buffered_out  = "<h1>Hotswapping " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
-                    + "<pre>" + sh.exec (cmd).stdout + "</pre>"
+function rebuildWithoutDNS (buffered_out, playbook, enviroment, callback) {
+  var cmd  = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
+             "ansible-playbook infrastructure.yml -i hosts/" + enviroment + " --skip-tags dns"
+
+  console.log ("Rebuild without DNS")
+
+  buffered_out += "<h1>Hotswapping " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
+                + "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
     //  sendSlack (playbook + " infra completed in " + env)
 
   callback (buffered_out)
+}
+
+function isRunningCorrectly (buffered_out, playbook, current_role, attempts, callback) {
+  console.log ("Asking IG if server is ok ... " + attempts)
+
+  if (attempts == 0) {
+    callback (buffered_out)
+  } else {
+    setTimeout( function () {
+      isRunningCorrectly (buffered_out, playbook, current_role, --attempts, callback)
+    }, 10000)
+  }
 }
 
 function showEnviromentSelection () {
