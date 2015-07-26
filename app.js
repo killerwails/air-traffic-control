@@ -28,23 +28,23 @@ if (cluster.isMaster) {
   webserver.use (function (req, res) {
     var buffered_out = "<style>pre { background: black;color: white;padding: 20px; } tr:hover { color: white; background: black; } tr:hover a { color: white; } td {padding: 0 20}</style>",
         url_folders  = req.originalUrl.split ('/'),
-        env          = url_folders[1],
+        enviroment   = url_folders[1],
         action       = url_folders[2],
         playbook     = url_folders[3],
         role         = url_folders[4]
 
-    if (env == "" && env != "favicon.ico") {
+    if (enviroment == "" && enviroment != "favicon.ico") {
       buffered_out += showEnviromentSelection ()
     } else if (action == "build") {
-      buffered_out += build (playbook, env)
+      buffered_out += build (playbook, enviroment)
     } else if (action == "reforge") {
-      buffered_out += reforge (playbook, env)
+      buffered_out += reforge (playbook, enviroment)
     } else if (action == "hotswap") {
-      buffered_out += hotswap (buffered_out, playbook, env, role, function (buffered_out) {
+      buffered_out += hotswap (buffered_out, playbook, enviroment, role, function (buffered_out) {
         res.send (buffered_out)
       })
     } else {
-      buffered_out += showIndex (env)
+      buffered_out += showIndex (enviroment)
     }
 
     if (action != "hotswap")
@@ -90,27 +90,27 @@ function sendSlack (message) {
   })
 }
 
-function build (playbook, env) {
+function build (playbook, enviroment) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
-                     "ansible-playbook infrastructure.yml -i hosts/" + env,
+                     "ansible-playbook infrastructure.yml -i hosts/" + enviroment,
       buffered_out = ""
 
-  buffered_out += "<h1>Building " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
+  buffered_out += "<h1>Building " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
 
   buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
-  sendSlack (playbook + " infra completed in " + env)
+  sendSlack (playbook + " infra completed in " + enviroment)
 
   return buffered_out
 }
 
-function reforge (playbook, env) {
+function reforge (playbook, enviroment) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + " && " +
                      "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/",
-      enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
+      enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + enviroment + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
       buffered_out = ""
 
-  buffered_out += "<h1>Reforge " + playbook + " in " + env + "</h1><h2>" + cmd + "</h2>"
+  buffered_out += "<h1>Reforge " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
 
   buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
@@ -124,8 +124,8 @@ function reforge (playbook, env) {
   return buffered_out
 }
 
-function hotswap (buffered_out, playbook, env, role, callback) {
-  var all_roles    = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + env + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
+function hotswap (buffered_out, playbook, enviroment, role, callback) {
+  var all_roles    = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + enviroment + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
       current_role = "",
       params       = {
         DryRun: false,
@@ -141,15 +141,15 @@ function hotswap (buffered_out, playbook, env, role, callback) {
     }
   }
 
-  AWS.config.region = ENVIROMENT_AWS_REGION_MAP[env]
+  AWS.config.region = ENVIROMENT_AWS_REGION_MAP[enviroment]
 
   new AWS.EC2().describeInstances(params, function(error, data) {
     if (error) {
       console.log(error)
     } else {
-      findInstance (buffered_out, data, playbook, current_role, function (buffered_out) {
-        rebuildWithoutDNS (buffered_out, playbook, env, function (buffered_out) {
-          isRunningCorrectly (buffered_out, playbook, current_role, 10, function (buffered_out) {
+      breakAwsTag (buffered_out, data, playbook, enviroment, current_role, function (buffered_out) {
+        rebuildWithoutDNS (buffered_out, playbook, enviroment, function (buffered_out) {
+          checkServerIsRunningCorrectly (buffered_out, playbook, enviroment, current_role, 1, function (buffered_out) {
             callback (buffered_out)
           })
         })
@@ -158,7 +158,7 @@ function hotswap (buffered_out, playbook, env, role, callback) {
   })
 }
 
-function findInstance (buffered_out, data, playbook, enviroment, callback) {
+function breakAwsTag (buffered_out, data, playbook, enviroment, role, callback) {
   var instance   = data.Reservations[0].Instances[0],
       instanceId = instance.InstanceId,
       tags       = instance.Tags
@@ -180,9 +180,14 @@ function findInstance (buffered_out, data, playbook, enviroment, callback) {
       new AWS.EC2().createTags(params, function(err) {
         console.log("Tagging instance", err ? "failure" : "success")
 
-        if (!err) {
-          callback(buffered_out)
+        if (err) {
+          var error_message = "Error: " + err
+
+          buffered_out += error_message
+          console.log (error_message)
         }
+
+        callback(buffered_out)
       })
     }
   }
@@ -197,20 +202,29 @@ function rebuildWithoutDNS (buffered_out, playbook, enviroment, callback) {
   buffered_out += "<h1>Hotswapping " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
                 + "<pre>" + sh.exec (cmd).stdout + "</pre>"
 
-    //  sendSlack (playbook + " infra completed in " + env)
+    //  sendSlack (playbook + " infra completed in " + enviroment)
 
   callback (buffered_out)
 }
 
-function isRunningCorrectly (buffered_out, playbook, current_role, attempts, callback) {
+function checkServerIsRunningCorrectly (buffered_out, playbook, enviroment, role, attempts, callback) {
   console.log ("Asking IG if server is ok ... " + attempts)
+
+  // get new server address
+  new AWS.EC2().describeInstances(function(error, data) {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log (data.Reservations.Instances)
+    }
+  })
 
   if (attempts == 0) {
     callback (buffered_out)
   } else {
     setTimeout( function () {
-      isRunningCorrectly (buffered_out, playbook, current_role, --attempts, callback)
-    }, 10000)
+      checkServerIsRunningCorrectly (buffered_out, playbook, enviroment, role, --attempts, callback)
+    }, 3000)
   }
 }
 
