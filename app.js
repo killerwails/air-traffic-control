@@ -33,9 +33,7 @@ if (cluster.isMaster) {
         playbook     = url_folders[3],
         role         = url_folders[4]
 
-    if (env == "favicon.ico") env = ""
-
-    if (env == "") {
+    if (env == "" && env != "favicon.ico") {
       buffered_out += showEnviromentSelection ()
     } else if (action == "build") {
       buffered_out += build (playbook, env)
