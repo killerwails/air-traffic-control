@@ -3,7 +3,6 @@ var CONFIG                    = require("./config"),
     AWS                       = require("aws-sdk"),
     ENVIROMENT_AWS_REGION_MAP = require("./enviromentAwsRegionMap.json"),
     fs                        = require('fs'),
-    sh                        = require('execSync'),  // executing system commands
     Slack                     = require("node-slack");
     slack                     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
 
@@ -34,15 +33,15 @@ if (cluster.isMaster) {
         role         = url_folders[4]
 
     if (enviroment == "" && enviroment != "favicon.ico") {
-      buffered_out += showEnviromentSelection ()
+//      buffered_out += showEnviromentSelection ()
     } else if (action == "build") {
-      buffered_out += build (playbook, enviroment)
+//      buffered_out += build (playbook, enviroment)
     } else if (action == "reforge") {
-      buffered_out += reforge (playbook, enviroment)
+//      buffered_out += reforge (playbook, enviroment)
     } else if (action == "hotswap") {
-      buffered_out += hotswap (buffered_out, playbook, enviroment, role, function (buffered_out) {
-        res.send (buffered_out)
-      })
+//      buffered_out += hotswap (buffered_out, playbook, enviroment, role, function (buffered_out) {
+//        res.send (buffered_out)
+//      })
     } else {
       buffered_out += showIndex (enviroment)
     }
@@ -90,7 +89,7 @@ function sendSlack (message) {
   })
 }
 
-function build (playbook, enviroment) {
+/*function build (playbook, enviroment) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
                      "ansible-playbook infrastructure.yml -i hosts/" + enviroment,
       buffered_out = ""
@@ -102,9 +101,9 @@ function build (playbook, enviroment) {
   sendSlack (playbook + " infra completed in " + enviroment)
 
   return buffered_out
-}
+}*/
 
-function reforge (playbook, enviroment) {
+/*function reforge (playbook, enviroment) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + " && " +
                      "s3cmd sync playbook-" + playbook + "/ s3://telusdigital-forge/" + playbook + "/",
       enviroments  = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + enviroment + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
@@ -122,9 +121,9 @@ function reforge (playbook, enviroment) {
   }
 
   return buffered_out
-}
+}*/
 
-function hotswap (buffered_out, playbook, enviroment, role, callback) {
+/*function hotswap (buffered_out, playbook, enviroment, role, callback) {
   var all_roles    = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + "/hosts/" + enviroment + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g),
       current_role = "",
       params       = {
@@ -156,7 +155,7 @@ function hotswap (buffered_out, playbook, enviroment, role, callback) {
       })
     }
   })
-}
+}*/
 
 function breakAwsTag (buffered_out, data, playbook, enviroment, role, callback) {
   var instance   = data.Reservations[0].Instances[0],
@@ -193,7 +192,7 @@ function breakAwsTag (buffered_out, data, playbook, enviroment, role, callback) 
   }
 }
 
-function rebuildWithoutDNS (buffered_out, playbook, enviroment, callback) {
+/*function rebuildWithoutDNS (buffered_out, playbook, enviroment, callback) {
   var cmd  = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
              "ansible-playbook infrastructure.yml -i hosts/" + enviroment + " --skip-tags dns"
 
@@ -205,7 +204,7 @@ function rebuildWithoutDNS (buffered_out, playbook, enviroment, callback) {
     //  sendSlack (playbook + " infra completed in " + enviroment)
 
   callback (buffered_out)
-}
+}*/
 
 function checkServerIsRunningCorrectly (buffered_out, playbook, enviroment, role, attempts, callback) {
   console.log ("Asking IG if server is ok ... " + attempts)
@@ -240,7 +239,7 @@ function showEnviromentSelection () {
   return buffered_out
 }
 
-function showIndex (enviroment) {
+/*function showIndex (enviroment) {
   var playbook_files = getFiles(CONFIG.REPOSITORY_HOME),
       buffered_out   = "<h1><a href='../'>&lt;</a>" + enviroment + "</h1>"
                      + "<table>"
@@ -278,4 +277,4 @@ function showIndex (enviroment) {
   buffered_out += "</table>"
 
   return buffered_out
-}
+}*/
