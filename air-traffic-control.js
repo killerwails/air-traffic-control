@@ -36,7 +36,7 @@ if (cluster.isMaster) {
 
     if (enviroment == "" && enviroment != "favicon.ico") {
       buffered_out += showEnviromentSelection ()
-      res.send(buffered_out + output)
+      res.send(buffered_out)
     } else if (action == "build") {
       buffered_out += build (playbook, enviroment, function (output) {
         res.send(buffered_out + output)
