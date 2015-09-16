@@ -15,7 +15,7 @@ Change `USERID` to your user on the remote server.  You should have your keys in
 
 ## start server
 ```
-node app.js
+node air-traffic-control.js
 ```
 
 ## open site
