@@ -3,8 +3,10 @@ var CONFIG                    = require("./config"),
     AWS                       = require("aws-sdk"),
     ENVIROMENT_AWS_REGION_MAP = require("./enviromentAwsRegionMap.json"),
     fs                        = require('fs'),
-    Slack                     = require("node-slack");
-    slack                     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN);
+    Slack                     = require("node-slack"),
+    slack                     = new Slack("https://hooks.slack.com/services/" + CONFIG.SLACK_TOKEN),
+    sys                       = require('sys'),
+    exec                      = require('child_process').exec
 
 if (cluster.isMaster) {
   var cpuCount        = require('os').cpus().length,
@@ -33,7 +35,7 @@ if (cluster.isMaster) {
         role         = url_folders[4]
 
     if (enviroment == "" && enviroment != "favicon.ico") {
-//      buffered_out += showEnviromentSelection ()
+      buffered_out += showEnviromentSelection ()
     } else if (action == "build") {
 //      buffered_out += build (playbook, enviroment)
     } else if (action == "reforge") {
@@ -239,7 +241,7 @@ function showEnviromentSelection () {
   return buffered_out
 }
 
-/*function showIndex (enviroment) {
+function showIndex (enviroment) {
   var playbook_files = getFiles(CONFIG.REPOSITORY_HOME),
       buffered_out   = "<h1><a href='../'>&lt;</a>" + enviroment + "</h1>"
                      + "<table>"
@@ -253,21 +255,24 @@ function showEnviromentSelection () {
 
     if (playbook_file.indexOf ("playbook-") == 0) {
       var this_playbook = playbook_file.replace ("playbook-", ""),
-          roles         = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + this_playbook + "/hosts/" + enviroment + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g)
+//        roles      = sh.exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + this_playbook + "/hosts/" + enviroment + " | grep teluswebteam.com").stdout.split(/\r\n|\r|\n/g)
+          roles         = exec ("cat " + CONFIG.REPOSITORY_HOME + "/playbook-" + this_playbook + "/hosts/" + enviroment + " | grep teluswebteam.com", function (error, stdout, stderr) {
+            console.log (stdout)
+          })
 
       buffered_out += "<tr>"
                     + "  <td>" + this_playbook + "</td>"
                     + "  <td>"
                     + "    <a href='/" + enviroment + "/build/" + this_playbook + "'>build infra</a> | "
-                    + "    <a href='/" + enviroment + "/reforge/" + this_playbook + "'>reforge</a> | "
-                    + "    hotswap: "
+//                    + "    <a href='/" + enviroment + "/reforge/" + this_playbook + "'>reforge</a> | "
+//                    + "    hotswap: "
 
-      for (var r in roles) {
+      /*for (var r in roles) {
         var role = roles[r].split(".")[0]
 
         if (role.indexOf("cat:") != 0)
           buffered_out += "      <a href='/" + enviroment + "/hotswap/" + this_playbook + "/" + role + "'>" + role + "</a>"
-      }
+      }*/
 
       buffered_out += "  </td>"
                     + "</tr>"
@@ -277,4 +282,4 @@ function showEnviromentSelection () {
   buffered_out += "</table>"
 
   return buffered_out
-}*/
+}
