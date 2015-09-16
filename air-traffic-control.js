@@ -36,7 +36,6 @@ if (cluster.isMaster) {
 
     if (enviroment == "" && enviroment != "favicon.ico") {
       buffered_out += showEnviromentSelection ()
-      res.send(buffered_out)
     } else if (action == "build") {
       buffered_out += build (playbook, enviroment, function (output) {
         res.send(buffered_out + output)
@@ -51,8 +50,8 @@ if (cluster.isMaster) {
       buffered_out += showIndex (enviroment)
     }
 
-//    if (action != "hotswap")
-//      res.send(buffered_out)
+    if (action != "hotswap" && action != "build")
+      res.send(buffered_out)
   })
 
   webserver.listen(CONFIG.PORT, 'localhost')
