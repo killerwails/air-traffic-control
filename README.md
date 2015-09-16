@@ -13,6 +13,7 @@ Change `REPOSITORY_HOME` to the directory containing your `playbook-*` forge rea
 
 Change `USERID` to your user on the remote server.  You should have your keys in your keychain.
 
+## setup aws access
 You should also have your aws keys at `~/.aws`
 ```
 export AWS_ACCESS_KEY_ID=REDACT
