@@ -37,7 +37,9 @@ if (cluster.isMaster) {
     if (enviroment == "" && enviroment != "favicon.ico") {
       buffered_out += showEnviromentSelection ()
     } else if (action == "build") {
-//      buffered_out += build (playbook, enviroment)
+      buffered_out += build (playbook, enviroment, function (output) {
+        res.send(buffered_out + "<pre>" + output + "</pre>")
+      })
     } else if (action == "reforge") {
 //      buffered_out += reforge (playbook, enviroment)
     } else if (action == "hotswap") {
@@ -48,8 +50,8 @@ if (cluster.isMaster) {
       buffered_out += showIndex (enviroment)
     }
 
-    if (action != "hotswap")
-      res.send(buffered_out)
+//    if (action != "hotswap")
+//      res.send(buffered_out)
   })
 
   webserver.listen(CONFIG.PORT, 'localhost')
@@ -91,19 +93,28 @@ function sendSlack (message) {
   })
 }
 
-/*function build (playbook, enviroment) {
+function build (playbook, enviroment, callback) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + "/playbook-" + playbook + " && " +
                      "ansible-playbook infrastructure.yml -i hosts/" + enviroment,
       buffered_out = ""
 
   buffered_out += "<h1>Building " + playbook + " in " + enviroment + "</h1><h2>" + cmd + "</h2>"
 
-  buffered_out += "<pre>" + sh.exec (cmd).stdout + "</pre>"
-
   sendSlack (playbook + " infra completed in " + enviroment)
 
-  return buffered_out
-}*/
+  exec (cmd, function (error, stdout, stderr) {
+//    var buffered_out = ""
+
+    if (error) {
+      buffered_out += error
+    }
+
+    buffered_out += "<pre>" + stdout + "</pre>"
+
+    console.log (buffered_out)
+    callback (buffered_out)
+  })
+}
 
 /*function reforge (playbook, enviroment) {
   var cmd          = "cd " + CONFIG.REPOSITORY_HOME + " && " +
